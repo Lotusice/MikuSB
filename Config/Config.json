@@ -1,0 +1,42 @@
+{
+  "HttpServer": {
+    "BindAddress": "0.0.0.0",
+    "PublicAddress": "127.0.0.1",
+    "Port": 21500
+  },
+  "GameServer": {
+    "BindAddress": "0.0.0.0",
+    "PublicAddress": "127.0.0.1",
+    "Port": 21000,
+    "KcpAliveMs": 45000,
+    "DatabaseName": "Miku.db",
+    "GameServerId": "MikuSB",
+    "GameServerName": "MikuSB"
+  },
+  "Path": {
+    "ResourcePath": "Resources",
+    "ConfigPath": "Config",
+    "DatabasePath": "Config/Database",
+    "HandbookPath": "Config/Handbook",
+    "LogPath": "Config/Logs",
+    "DataPath": "Config/Data"
+  },
+  "ServerOption": {
+    "Language": "EN",
+    "FallbackLanguage": "EN",
+    "DefaultPermissions": [
+      "Admin"
+    ],
+    "ServerProfile": {
+      "Name": "Miku-chan",
+      "Uid": 80
+    },
+    "AutoCreateUser": true,
+    "SavePersonalDebugFile": false,
+    "AutoSendResponseWhenNoHandler": true,
+    "EnableDebug": true,
+    "DebugMessage": true,
+    "DebugDetailMessage": true,
+    "DebugNoHandlerPacket": true
+  }
+}
