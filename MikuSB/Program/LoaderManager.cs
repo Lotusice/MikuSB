@@ -3,6 +3,7 @@ using MikuSB.Data;
 using MikuSB.Database;
 using MikuSB.GameServer.Command;
 using MikuSB.GameServer.Server;
+using MikuSB.GameServer.Server.CallGS;
 using MikuSB.GameServer.Server.Packet;
 using MikuSB.Internationalization;
 using MikuSB.MikuSB.Tool;
@@ -121,7 +122,8 @@ public class LoaderManager : MikuSB
             SocketConnection.LogMap.TryAdd(value, name);
         }
 
-        HandlerManager.Init(); 
+        HandlerManager.Init();
+        CallGSRouter.Init();
     }
 
     public static async Task InitResource()
