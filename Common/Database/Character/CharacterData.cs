@@ -7,7 +7,7 @@ namespace MikuSB.Database.Character;
 public class CharacterData : BaseDatabaseDataHelper
 {
     [SugarColumn(IsJson = true)] public List<CharacterInfo> Characters { get; set; } = [];
-    public uint NextCharacterGuid { get; set; } = 0;
+    public uint NextCharacterGuid { get; set; } = 1;
 }
 
 public class CharacterInfo
