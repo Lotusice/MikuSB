@@ -22,6 +22,7 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
             TemplateId = templateId,
             UniqueId = InventoryData.NextUniqueUid++,
             Level = level,
+            Break = weaponData.InitBreak,
             ItemCount = 1
         };
         InventoryData.Weapons[weaponInfo.UniqueId] = weaponInfo;

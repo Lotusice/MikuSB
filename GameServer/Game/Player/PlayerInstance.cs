@@ -111,6 +111,7 @@ public class PlayerInstance(PlayerGameData data)
     public async ValueTask OnEnterGame()
     {
         if (!Initialized) await InitialPlayerManager();
+        await CharacterManager.RepairCharacterWeapons();
     }
 
     public async ValueTask OnLogin()
@@ -217,6 +218,11 @@ public class PlayerInstance(PlayerGameData data)
         yield return (110, 1, 1);
         yield return (178, 1, 1_700_000_000);
         yield return (187, 1, 2);
+
+        // Cash.GetMoneyCount uses group 1 with sid = moneyId * 2 + 1 for most currencies.
+        // Fill a wide currency id range so every in-game currency starts effectively unlimited.
+        for (uint moneyId = 1; moneyId <= 200; moneyId++)
+            yield return (1, moneyId * 2 + 1, 999_999_999);
 
         for (uint guideId = 1; guideId <= 150; guideId++)
             yield return (4, guideId, 999);

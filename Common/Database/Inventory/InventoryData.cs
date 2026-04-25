@@ -23,6 +23,16 @@ public abstract class BaseGameItemInfo
     public uint UniqueId { get; set; }
     public ulong TemplateId { get; set; }
     public uint ItemCount { get; set; }
+
+    public virtual Item ToProto()
+    {
+        return new Item
+        {
+            Id = UniqueId,
+            Template = TemplateId,
+            Count = ItemCount
+        };
+    }
 }
 
 public abstract class GrowableItemInfo : BaseGameItemInfo
@@ -30,12 +40,13 @@ public abstract class GrowableItemInfo : BaseGameItemInfo
     public bool IsLocked { get; set; }
     public uint Level { get; set; }
     public uint Exp { get; set; }
+    public uint Break { get; set; }
     public uint EquipAvatarId { get; set; }
 }
 
 public class GameWeaponInfo : GrowableItemInfo
 {
-    public Item ToProto()
+    public override Item ToProto()
     {
         var proto = new Item
         {
@@ -44,17 +55,17 @@ public class GameWeaponInfo : GrowableItemInfo
             Count = ItemCount,
             Enhance = new Enhance
             {
-                Level = Level
+                Level = Level,
+                Exp = Exp,
+                Break = Break
             }
         };
         return proto;
     }
-}
-
-public class GameSkinInfo : BaseGameItemInfo
+}public class GameSkinInfo : BaseGameItemInfo
 {
     public uint Level { get; set; }
-    public Item ToProto()
+    public override Item ToProto()
     {
         var proto = new Item
         {

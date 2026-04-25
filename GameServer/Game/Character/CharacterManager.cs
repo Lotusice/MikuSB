@@ -57,4 +57,59 @@ public class CharacterManager(PlayerInstance player) : BasePlayerManager(player)
         var templateId = GameResourceTemplateId.FromGdpl((uint)genre,(uint)detail,(uint)particular,1);
         return CharacterData.Characters.Find(Character => Character.TemplateId == templateId);
     }
+
+    public async ValueTask RepairCharacterWeapons()
+    {
+        var changed = false;
+        var equippedWeaponIds = new HashSet<uint>();
+
+        foreach (var character in CharacterData.Characters)
+        {
+            var weapon = Player.InventoryManager.GetWeaponItem(character.WeaponUniqueId);
+            if (weapon == null)
+            {
+                var cardData = GameData.CardData.Values.FirstOrDefault(x =>
+                    GameResourceTemplateId.FromGdpl(x.Genre, x.Detail, x.Particular, x.Level) == character.TemplateId);
+                if (cardData?.DefaultWeaponGPDL.Count >= 4)
+                {
+                    weapon = await Player.InventoryManager.AddWeaponItem(
+                        (ItemTypeEnum)cardData.DefaultWeaponGPDL[0],
+                        cardData.DefaultWeaponGPDL[1],
+                        cardData.DefaultWeaponGPDL[2],
+                        cardData.DefaultWeaponGPDL[3]);
+                    if (weapon != null)
+                    {
+                        character.WeaponUniqueId = weapon.UniqueId;
+                        changed = true;
+                    }
+                }
+            }
+
+            if (weapon == null)
+                continue;
+
+            if (weapon.EquipAvatarId != character.Guid)
+            {
+                weapon.EquipAvatarId = character.Guid;
+                changed = true;
+            }
+
+            equippedWeaponIds.Add(weapon.UniqueId);
+        }
+
+        foreach (var weapon in Player.InventoryManager.InventoryData.Weapons.Values)
+        {
+            if (!equippedWeaponIds.Contains(weapon.UniqueId) && weapon.EquipAvatarId != 0)
+            {
+                weapon.EquipAvatarId = 0;
+                changed = true;
+            }
+        }
+
+        if (!changed)
+            return;
+
+        DatabaseHelper.SaveDatabaseType(CharacterData);
+        DatabaseHelper.SaveDatabaseType(Player.InventoryManager.InventoryData);
+    }
 }

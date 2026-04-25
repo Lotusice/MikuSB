@@ -3,43 +3,29 @@ using Newtonsoft.Json.Linq;
 
 namespace MikuSB.Data.Excel;
 
-[ResourceEntity("weapon.json")]
-public class WeaponExcel : ExcelResource
+[ResourceEntity("suplies.json")]
+public class SuppliesExcel : ExcelResource
 {
     public uint Genre { get; set; }
     public uint Detail { get; set; }
     public uint Particular { get; set; }
     public uint Level { get; set; }
     [JsonProperty("Color")] public JToken? ColorRaw { get; set; }
-    [JsonProperty("InitBreak")] public JToken? InitBreakRaw { get; set; }
-    public int Class { get; set; }
-    public uint Icon { get; set; }
     [JsonProperty("ProvideExp")] public JToken? ProvideExpRaw { get; set; }
     [JsonProperty("ConsumeGold")] public JToken? ConsumeGoldRaw { get; set; }
-    [JsonProperty("RecycleID")] public JToken? RecycleIdRaw { get; set; }
-    public int EvolutionMatID { get; set; }
-    public int BreakMatID { get; set; }
-    public int LevelLimitID { get; set; }
-    public int BreakLimitID { get; set; }
-    public int AppearID { get; set; }
-    public List<int> DefaultSkillID { get; set; } = [];
-    public List<int> WeaponPartsLimit { get; set; } = [];
-    public string I18n { get; set; } = "";
 
     [JsonIgnore] public int Color => ReadInt(ColorRaw);
-    [JsonIgnore] public uint InitBreak => ReadUInt(InitBreakRaw);
     [JsonIgnore] public uint ProvideExp => ReadUInt(ProvideExpRaw);
     [JsonIgnore] public uint ConsumeGold => ReadUInt(ConsumeGoldRaw);
-    [JsonIgnore] public int RecycleID => ReadInt(RecycleIdRaw);
 
     public override uint GetId()
     {
-        return (uint)I18n.GetHashCode();
+        return (uint)GameResourceTemplateId.FromGdpl(Genre, Detail, Particular, Level);
     }
 
     public override void Loaded()
     {
-        GameData.WeaponData.Add(GetId(), this);
+        GameData.SuppliesData[GetId()] = this;
     }
 
     private static int ReadInt(JToken? token)
