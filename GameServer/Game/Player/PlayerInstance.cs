@@ -188,7 +188,20 @@ public class PlayerInstance(PlayerGameData data)
             proto.Attrs[ToShiftedAttrKey(gid, sid)] = val;
         }
 
+        proto.ShowItems.AddRange(Data.ShowItems);
+
         return proto;
+    }
+
+    public void SetShowItem(int index, ulong itemId)
+    {
+        if (index <= 0)
+            return;
+
+        while (Data.ShowItems.Count < index)
+            Data.ShowItems.Add(0);
+
+        Data.ShowItems[index - 1] = itemId;
     }
 
     private static uint ToPackedAttrKey(uint gid, uint sid)
