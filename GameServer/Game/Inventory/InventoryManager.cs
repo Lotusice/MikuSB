@@ -23,6 +23,7 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
             UniqueId = InventoryData.NextUniqueUid++,
             Level = level,
             Break = weaponData.InitBreak,
+            Flag = ItemFlagEnum.FLAG_READED,
             ItemCount = 1
         };
         InventoryData.Weapons[weaponInfo.UniqueId] = weaponInfo;
@@ -58,6 +59,7 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
             TemplateId = templateId,
             UniqueId = InventoryData.NextUniqueUid++,
             Level = level,
+            Flag = ItemFlagEnum.FLAG_READED,
             ItemCount = 1
         };
         InventoryData.Skins[skinInfo.UniqueId] = skinInfo;

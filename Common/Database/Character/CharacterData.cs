@@ -1,4 +1,5 @@
-﻿using MikuSB.Proto;
+﻿using MikuSB.Enums.Item;
+using MikuSB.Proto;
 using SqlSugar;
 
 namespace MikuSB.Database.Character;
@@ -21,7 +22,7 @@ public class CharacterInfo
     public int Trust { get; set; }
     public uint WeaponUniqueId { get; set; }
     public uint SkinId { get; set; }
-    public uint Flag { get; set; }
+    public ItemFlagEnum Flag { get; set; }
     public uint Expiration { get; set; }
     [SugarColumn(IsJson = true)] public List<uint> UnlockedSkin { get; set; } = [];
     [SugarColumn(IsJson = true)] public List<uint> Spines { get; set; } = [];
@@ -36,7 +37,7 @@ public class CharacterInfo
             Id = Guid,
             Template = TemplateId,
             Count = Count,
-            Flag = Flag,
+            Flag = (uint)Flag,
             Expiration = Expiration,
             Enhance = new Enhance
             {

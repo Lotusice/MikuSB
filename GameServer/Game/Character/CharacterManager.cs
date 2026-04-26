@@ -25,6 +25,7 @@ public class CharacterManager(PlayerInstance player) : BasePlayerManager(player)
             Level = level,
             Break = CharacterExcel.InitBreak,
             Timestamp = Extensions.GetUnixSec(),
+            Flag = ItemFlagEnum.FLAG_READED
         };
 
         var weaponInfo = await Player.InventoryManager!.AddWeaponItem((ItemTypeEnum)CharacterExcel.DefaultWeaponGPDL[0], CharacterExcel.DefaultWeaponGPDL[1], CharacterExcel.DefaultWeaponGPDL[2], (uint)CharacterExcel.DefaultWeaponGPDL[3]);

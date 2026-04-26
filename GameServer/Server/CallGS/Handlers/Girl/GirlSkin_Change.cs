@@ -1,7 +1,7 @@
 ﻿using MikuSB.Proto;
 using System.Text.Json;
 
-namespace MikuSB.GameServer.Server.CallGS.Handlers.Daily;
+namespace MikuSB.GameServer.Server.CallGS.Handlers.Girl;
 
 [CallGSApi("GirlSkin_Change")]
 public class GirlSkin_Change : ICallGSHandler

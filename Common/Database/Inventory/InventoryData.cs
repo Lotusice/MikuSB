@@ -1,4 +1,5 @@
-﻿using MikuSB.Proto;
+﻿using MikuSB.Enums.Item;
+using MikuSB.Proto;
 using SqlSugar;
 
 namespace MikuSB.Database.Inventory;
@@ -23,6 +24,7 @@ public abstract class BaseGameItemInfo
     public uint UniqueId { get; set; }
     public ulong TemplateId { get; set; }
     public uint ItemCount { get; set; }
+    public ItemFlagEnum Flag { get; set; }
 
     public virtual Item ToProto()
     {
@@ -30,7 +32,8 @@ public abstract class BaseGameItemInfo
         {
             Id = UniqueId,
             Template = TemplateId,
-            Count = ItemCount
+            Count = ItemCount,
+            Flag = (uint)Flag
         };
     }
 }
@@ -53,6 +56,7 @@ public class GameWeaponInfo : GrowableItemInfo
             Id = UniqueId,
             Template = TemplateId,
             Count = ItemCount,
+            Flag = (uint)Flag,
             Enhance = new Enhance
             {
                 Level = Level,
@@ -71,7 +75,8 @@ public class GameWeaponInfo : GrowableItemInfo
         {
             Id = UniqueId,
             Template = TemplateId,
-            Count = ItemCount
+            Count = ItemCount,
+            Flag = (uint)Flag,
         };
         return proto;
     }

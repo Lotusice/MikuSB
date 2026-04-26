@@ -46,5 +46,6 @@ public class HandlerReqLogin : Handler
         await connection.Player.OnEnterGame();
         connection.Player.Connection = connection;
         await connection.SendPacket(new PacketRspLogin(connection.Player!));
+        await connection.Player.OnHeartBeat();
     }
 }
