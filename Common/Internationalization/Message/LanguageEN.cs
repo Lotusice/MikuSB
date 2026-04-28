@@ -38,7 +38,7 @@ public class WordTextEN
     public string Star => "Star";
     public string Valk => "Valkyrie";
     public string Material => "Material";
-    public string Stigmata => "Stigmata";
+    public string SupportCard => "Support Card";
     public string Weapon => "Weapon";
     public string Banner => "Gacha";
     public string Activity => "Activity";
@@ -203,9 +203,10 @@ public class GiveAllTextEN
 {
     public string Desc => "Give all items to player\n"+
                           "Note: -1 means all";
-    public string Usage => "Usage: /giveall weapon <detail/-1> -p<particular> -l<level>";
-    public string WeaponNotFound => "Weapon not found!";
-    public string WeaponAdded => "Added {0} weapon(s) to player!";
+    public string Usage => "Usage: /giveall weapon <detail/-1> -p<particular> -l<level>\n" +
+                           "Usage: /giveall card <detail/-1> -p<particular> -l<level>";
+    public string NotFound => "{0} not found!";
+    public string GiveAllItems => "Added {0} {1} to player!";
 }
 
 #endregion

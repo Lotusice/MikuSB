@@ -35,6 +35,8 @@ public class ServerTextCHS
 /// </summary>
 public class WordTextCHS
 {
+    public string SupportCard => "支援卡";
+    public string Weapon => "武器";
     public string Rank => "星魂";
     public string Avatar => "角色";
     public string Material => "材料";
@@ -232,11 +234,12 @@ public class GirlTextCHS
 /// </summary>
 public class GiveAllTextCHS
 {
-    public string Desc => "给玩家所有物品\n" +
-                          "备注: -1 代表全部";
-    public string Usage => "用法: /giveall weapon <detail/-1> -p<particular> -l<level>";
-    public string WeaponNotFound => "找不到武器！";
-    public string WeaponAdded => "已添加 {0} 把武器给玩家！";
+    public string Desc => "给予玩家所有物品\n" +
+                          "注意：-1 表示全部";
+    public string Usage => "用法：/giveall weapon <detail/-1> -p<特定> -l<等级>\n" +
+                           "用法：/giveall card <detail/-1> -p<特定> -l<等级>";
+    public string NotFound => "未找到 {0}！";
+    public string GiveAllItems => "已向玩家添加 {0} 个 {1}！";
 }
 
 #endregion

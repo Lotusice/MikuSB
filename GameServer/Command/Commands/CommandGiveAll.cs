@@ -36,12 +36,48 @@ public class CommandGiveAll : ICommands
             var weapon = await player.InventoryManager!.AddWeaponItem(ItemTypeEnum.TYPE_WEAPON, (uint)detail,(uint)particular,1,(uint)level,false);
             if (weapon == null)
             {
-                await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.WeaponNotFound"));
+                await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.NotFound", I18NManager.Translate("Word.Weapon")));
                 return;
             }
             weapons.Add(weapon);
         }
         if (weapons.Count > 0) await player.SendPacket(new PacketNtfCallScript(weapons));
-        await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.WeaponAdded", weapons.Count.ToString()));
+        await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
+            I18NManager.Translate("Word.Weapon"), weapons.Count.ToString()));
+    }
+
+    [CommandMethod("card")]
+    public async ValueTask GiveAllSupportCard(CommandArg arg)
+    {
+        if (!await arg.CheckOnlineTarget()) return;
+        if (await arg.GetOption('p') is not int particular) return;
+        if (await arg.GetOption('l') is not int level) return;
+
+        var detail = arg.GetInt(0);
+        var player = arg.Target!.Player!;
+        List<GameSupportCardInfo> supportCards = [];
+        if (detail == -1)
+        {
+            // add all
+            foreach (var config in GameData.SupportCardData)
+            {
+                var supportCard = await player.InventoryManager!
+                    .AddSupportCardItem(config.Detail, config.Particular, config.Level, (uint)level, false);
+                if (supportCard != null) supportCards.Add(supportCard);
+            }
+        }
+        else
+        {
+            var supportCard = await player.InventoryManager!.AddSupportCardItem((uint)detail, (uint)particular, 1, (uint)level, false);
+            if (supportCard == null)
+            {
+                await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.NotFound", I18NManager.Translate("Word.SupportCard")));
+                return;
+            }
+            supportCards.Add(supportCard);
+        }
+        if (supportCards.Count > 0) await player.SendPacket(new PacketNtfCallScript(supportCards));
+        await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
+            I18NManager.Translate("Word.SupportCard"), supportCards.Count.ToString()));
     }
 }

@@ -17,6 +17,9 @@ public class InventoryData : BaseDatabaseDataHelper
 
     [SugarColumn(IsJson = true)]
     public Dictionary<uint, GameSkinInfo> Skins { get; set; } = [];  // Key: UniqueId
+
+    [SugarColumn(IsJson = true)]
+    public Dictionary<uint, GameSupportCardInfo> SupportCards { get; set; } = [];  // Key: UniqueId
 }
 
 public class BaseGameItemInfo
@@ -72,7 +75,8 @@ public class GameWeaponInfo : GrowableItemInfo
         };
         return proto;
     }
-}public class GameSkinInfo : BaseGameItemInfo
+}
+public class GameSkinInfo : BaseGameItemInfo
 {
     public uint SkinType { get; set; }
     public override Item ToProto()
@@ -85,6 +89,29 @@ public class GameWeaponInfo : GrowableItemInfo
             Flag = (uint)Flag,
         };
         proto.Slots[11] = SkinType;
+        return proto;
+    }
+}
+
+
+public class GameSupportCardInfo : BaseGameItemInfo
+{
+    public uint AffixId { get; set; }
+    public override Item ToProto()
+    {
+        var proto = new Item
+        {
+            Id = UniqueId,
+            Template = TemplateId,
+            Count = ItemCount,
+            Flag = (uint)Flag,
+            Enhance = new Enhance
+            {
+                Level = Level,
+                Exp = Exp
+            }
+        };
+        proto.Slots[1] = AffixId;
         return proto;
     }
 }

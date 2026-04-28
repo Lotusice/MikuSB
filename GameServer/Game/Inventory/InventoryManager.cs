@@ -110,24 +110,42 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
         return arInfo;
     }
 
-    public async ValueTask<BaseGameItemInfo?> AddSupportCardItem(uint detail, uint particular, uint level = 1, bool sendPacket = true)
+    public async ValueTask<GameSupportCardInfo?> AddSupportCardItem(uint detail, uint particular, uint level = 1, uint cardLevel = 1, bool sendPacket = true)
     {
         const ItemTypeEnum genre = ItemTypeEnum.TYPE_SUPPORT;
+        var spCard = GameData.SupportCardData.FirstOrDefault(x => x.Genre == (int)genre && x.Detail == detail && x.Particular == particular && x.Level == level);
+        if (spCard == null) return null;
         var templateId = GameResourceTemplateId.FromGdpl((uint)genre, detail, particular, level);
-        if (InventoryData.Items.Values.Any(x => x.TemplateId == templateId)) return null;
-
-        var info = new BaseGameItemInfo
+        cardLevel = Math.Clamp(cardLevel, 1, spCard.MaxLevel);
+        var info = new GameSupportCardInfo
         {
             TemplateId = templateId,
             UniqueId = InventoryData.NextUniqueUid++,
             ItemType = genre,
-            ItemCount = 1
+            ItemCount = 1,
+            Level = cardLevel,
         };
-        InventoryData.Items[info.UniqueId] = info;
+        InventoryData.SupportCards[info.UniqueId] = info;
 
         if (sendPacket) await Player.SendPacket(new PacketNtfCallScript([info]));
 
         return info;
+    }
+
+    public GameSupportCardInfo? GetSupportCardItem(uint uniqueId)
+    {
+        return InventoryData.SupportCards.GetValueOrDefault(uniqueId);
+    }
+
+    public GameSupportCardInfo? GetSupportCardByTemplateId(ulong templateId)
+    {
+        return InventoryData.SupportCards.Values.FirstOrDefault(x => x.TemplateId == templateId);
+    }
+
+    public GameSupportCardInfo? GetSupportCardItemGDPL(ItemTypeEnum genre, uint detail, uint particular, uint level)
+    {
+        var templateId = GameResourceTemplateId.FromGdpl((uint)genre, detail, particular, level);
+        return InventoryData.SupportCards.Values.FirstOrDefault(x => x.TemplateId == templateId);
     }
 
     public async ValueTask<BaseGameItemInfo?> AddManifestationItem(ItemTypeEnum genre, uint detail, uint particular, uint level = 1, bool sendPacket = true)
