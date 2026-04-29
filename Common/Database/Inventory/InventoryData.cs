@@ -83,6 +83,7 @@ public class GameWeaponInfo : GrowableItemInfo
 }
 public class GameSkinInfo : BaseGameItemInfo
 {
+    [SugarColumn(IsJson = true)] public Dictionary<uint, ulong> PartSlots { get; set; } = [];
     public uint SkinType { get; set; }
     public override Item ToProto()
     {
@@ -94,6 +95,7 @@ public class GameSkinInfo : BaseGameItemInfo
             Flag = (uint)Flag,
         };
         proto.Slots[(uint)ItemSkinSlotTypeEnum.SLOT_CARD_SKIL_TYPE] = Math.Min(SkinType, 1);
+        foreach (var (slot, uid) in PartSlots) proto.Slots[slot] = uid;
         return proto;
     }
 }

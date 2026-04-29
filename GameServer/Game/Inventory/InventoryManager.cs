@@ -270,4 +270,25 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
 
         return profileInfo;
     }
+
+    public async ValueTask<BaseGameItemInfo?> AddSkinPartItem(ItemTypeEnum genre, uint detail, uint particular, uint level = 1, bool sendPacket = true)
+    {
+        if (genre != ItemTypeEnum.TYPE_CARD_SKIN_PART) return null;
+        var skinPartData = GameData.CardSkinPartsData.Values.FirstOrDefault(x => x.Genre == (int)genre && x.Detail == detail && x.Particular == particular && x.Level == level);
+        if (skinPartData == null) return null;
+        var templateId = GameResourceTemplateId.FromGdpl((uint)genre, detail, particular, level);
+        if (InventoryData.Items.Values.Any(x => x.TemplateId == templateId)) return null;
+        var skinPartInfo = new BaseGameItemInfo
+        {
+            TemplateId = templateId,
+            UniqueId = InventoryData.NextUniqueUid++,
+            ItemType = genre,
+            ItemCount = 1
+        };
+        InventoryData.Items[skinPartInfo.UniqueId] = skinPartInfo;
+
+        if (sendPacket) await Player.SendPacket(new PacketNtfCallScript([skinPartInfo]));
+
+        return skinPartInfo;
+    }
 }

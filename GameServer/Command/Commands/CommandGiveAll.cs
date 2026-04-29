@@ -150,4 +150,40 @@ public class CommandGiveAll : ICommands
         await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
             I18NManager.Translate("Word.Profile"), profileItems.Count.ToString()));
     }
+
+    [CommandMethod("skinpart")]
+    public async ValueTask GiveAllSkinPart(CommandArg arg)
+    {
+        if (!await arg.CheckOnlineTarget()) return;
+        if (await arg.GetOption('p') is not int particular) return;
+        if (await arg.GetOption('l') is not int level) return;
+        if (await arg.GetOption('g') is not int genre) return;
+
+        var detail = arg.GetInt(0);
+        var player = arg.Target!.Player!;
+        List<BaseGameItemInfo> skinPartItems = [];
+        if (detail == -1)
+        {
+            // add all
+            foreach (var config in GameData.CardSkinPartsData.Values)
+            {
+                var skinPart = await player.InventoryManager!
+                    .AddSkinPartItem((ItemTypeEnum)config.Genre, config.Detail, config.Particular, config.Level, false);
+                if (skinPart != null) skinPartItems.Add(skinPart);
+            }
+        }
+        else
+        {
+            var skinPart = await player.InventoryManager!.AddSkinPartItem((ItemTypeEnum)genre, (uint)detail, (uint)particular, (uint)level, false);
+            if (skinPart == null)
+            {
+                await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.NotFound", I18NManager.Translate("Word.SkinPart")));
+                return;
+            }
+            skinPartItems.Add(skinPart);
+        }
+        if (skinPartItems.Count > 0) await player.SendPacket(new PacketNtfCallScript(skinPartItems));
+        await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
+            I18NManager.Translate("Word.SkinPart"), skinPartItems.Count.ToString()));
+    }
 }
