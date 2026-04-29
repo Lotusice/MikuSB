@@ -24,6 +24,7 @@ public class CharacterInfo
     public uint WeaponUniqueId { get; set; }
     public uint SkinId { get; set; }
     public uint WeaponSkinId { get; set; }
+    public uint SupportTeamIndex { get; set; } = 1;
     public ItemFlagEnum Flag { get; set; } = ItemFlagEnum.FLAG_READED;
     public uint Expiration { get; set; }
     [SugarColumn(IsJson = true)] public List<uint> UnlockedSkin { get; set; } = [];
@@ -58,6 +59,7 @@ public class CharacterInfo
         proto.Slots[(uint)ItemCardSlotTypeEnum.SLOT_WEAPON] = WeaponUniqueId;
         proto.Slots[(uint)ItemCardSlotTypeEnum.SLOT_SKIN] = SkinId;
         proto.Slots[(uint)ItemCardSlotTypeEnum.SLOT_WEAPON_SKIN] = WeaponSkinId;
+        proto.Slots[(uint)ItemCardSlotTypeEnum.SLOT_SUPPORTERINDEX] = SupportTeamIndex;
         foreach (var (slot, uid) in SupportSlots)
             proto.Slots[slot] = uid;
 
