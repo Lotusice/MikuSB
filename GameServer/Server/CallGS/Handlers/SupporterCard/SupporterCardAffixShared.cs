@@ -19,14 +19,14 @@ internal static class SupporterCardAffixShared
         return GameData.SupportCardData.FirstOrDefault(x => x.TemplateId == card.TemplateId);
     }
 
-    public static async Task SendResetResponse(Connection connection, NtfSyncPlayer? sync = null)
+    public static CallGSResult ResetResponse(NtfSyncPlayer? sync = null)
     {
-        await CallGSRouter.SendScript(connection, "SupporterCard_ResetAffix", "null", sync!);
+        return CallGSResult.Ok("null", sync, "SupporterCard_ResetAffix");
     }
 
-    public static async Task SendSelectResponse(Connection connection, NtfSyncPlayer? sync = null)
+    public static CallGSResult SelectResponse(NtfSyncPlayer? sync = null)
     {
-        await CallGSRouter.SendScript(connection, "SupporterCard_SelectAffix", "null", sync!);
+        return CallGSResult.Ok("null", sync, "SupporterCard_SelectAffix");
     }
 
     public static List<Item> ConsumeCostItems(Connection connection, IEnumerable<IReadOnlyList<uint>> costs)
@@ -101,13 +101,13 @@ internal static class SupporterCardAffixShared
     }
 }
 
-internal sealed class SupporterCardIdParam
+public sealed class SupporterCardIdParam
 {
     [JsonPropertyName("Id")]
     public int SupportCardUid { get; set; }
 }
 
-internal sealed class SupporterCardSelectParam
+public sealed class SupporterCardSelectParam
 {
     [JsonPropertyName("Id")]
     public int SupportCardUid { get; set; }
@@ -116,7 +116,7 @@ internal sealed class SupporterCardSelectParam
     public bool SelectNew { get; set; }
 }
 
-internal sealed class SupporterCardResetInitialParam
+public sealed class SupporterCardResetInitialParam
 {
     [JsonPropertyName("Id")]
     public int SupportCardUid { get; set; }
@@ -128,7 +128,7 @@ internal sealed class SupporterCardResetInitialParam
     public uint FixedId { get; set; }
 }
 
-internal sealed class SupporterCardSelectInitialParam
+public sealed class SupporterCardSelectInitialParam
 {
     [JsonPropertyName("Id")]
     public int SupportCardUid { get; set; }

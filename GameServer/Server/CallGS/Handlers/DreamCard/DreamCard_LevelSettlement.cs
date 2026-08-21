@@ -11,7 +11,7 @@ using MikuSB.Data;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.DreamCard;
 
 [CallGSApi("DreamCard_LevelSettlement")]
-public class DreamCard_LevelSettlement : ICallGSHandler
+public class DreamCard_LevelSettlement : CallGSHandler
 {
     private const uint LevelGroupId = AttrIds.DreamCard.LevelGid;
     private const uint LevelSubNum = 10;
@@ -21,10 +21,10 @@ public class DreamCard_LevelSettlement : ICallGSHandler
 
     private static readonly Lazy<DreamCardSettlementIndex?> SettlementIndex = new(LoadIndex);
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var (response, sync) = HandleSettlement(connection.Player!, JsonNode.Parse(param));
-        await CallGSRouter.SendScript(connection, "DreamCard_LevelSettlement", response.ToJsonString(), sync);
+        var (response, sync) = HandleSettlement(context.Connection.Player!, JsonNode.Parse(param));
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     public static (JsonObject Response, NtfSyncPlayer Sync) HandleSettlement(PlayerInstance player, JsonNode? tbParam)

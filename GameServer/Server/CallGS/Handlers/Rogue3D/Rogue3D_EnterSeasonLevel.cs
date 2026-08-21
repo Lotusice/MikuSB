@@ -11,36 +11,34 @@ namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 // param: {"nDiffId", "nTeamID", "tbTeam", "tbBuffList", "tbLog"}
 // Response: {"nSeed": int} on success, {"sErr": "key"} on failure
 [CallGSApi("Rogue3D_EnterSeasonLevel")]
-public class Rogue3D_EnterSeasonLevel : ICallGSHandler
+public class Rogue3D_EnterSeasonLevel : CallGSHandler<EnterSeasonLevelParam>
 {
     private const uint GroupId = AttrIds.Rogue3D.Gid;
     private const uint SeasonGameplayIdSid = AttrIds.Rogue3D.SeasonGameplayIdSid;
     private const uint SeasonEnterFlagSid = AttrIds.Rogue3D.SeasonEnterFlagSid;
     private static readonly Random Random = new();
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, EnterSeasonLevelParam req)
     {
-        var req = JsonSerializer.Deserialize<EnterSeasonLevelParam>(param);
+
         if (req == null)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_EnterSeasonLevel", "{\"nSeed\":0}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{\"nSeed\":0}"));
         }
 
         if (!GameData.Rogue3DDifficultData.TryGetValue(req.DiffId, out var cfg) || cfg.GameplayGroup.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_EnterSeasonLevel", "{\"sErr\":\"rogue3.massage_gameProcessError\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("rogue3.massage_gameProcessError"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
 
         SetAttr(player, SeasonGameplayIdSid, cfg.GameplayGroup[0], sync);
         SetAttr(player, SeasonEnterFlagSid, 1, sync);
 
         var seed = Random.Next(1, 1_000_000_000);
-        await CallGSRouter.SendScript(connection, "Rogue3D_EnterSeasonLevel", $"{{\"nSeed\":{seed}}}", sync);
+        return Task.FromResult(CallGSResult.Ok($"{{\"nSeed\":{seed}}}", sync));
     }
 
     private static void SetAttr(PlayerInstance player, uint sid, uint val, NtfSyncPlayer sync)
@@ -57,7 +55,7 @@ public class Rogue3D_EnterSeasonLevel : ICallGSHandler
     }
 }
 
-internal sealed class EnterSeasonLevelParam
+public sealed class EnterSeasonLevelParam
 {
     [JsonPropertyName("nDiffId")]
     public uint DiffId { get; set; }

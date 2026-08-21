@@ -13,21 +13,20 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCapture_GetLevelAward")]
-public class VirCapture_GetLevelAward : ICallGSHandler
+public class VirCapture_GetLevelAward : CallGSHandler<VirCaptureGetLevelAwardParam>
 {
     private const uint VirCaptureGroupId = AttrIds.VirCapture.Gid;
     private const uint CurLevelSid = AttrIds.VirCapture.CurrentLevelSid;
     private const uint LevelAwardFlagStartSid = AttrIds.VirCapture.LevelAwardFlagStartSid;
     private const uint LevelAwardFlagEndSid = AttrIds.VirCapture.LevelAwardFlagEndSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, VirCaptureGetLevelAwardParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<VirCaptureGetLevelAwardParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.IdList == null || req.IdList.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "VirCapture_GetLevelAward", "{\"tbAwardList\":[]}");
-            return;
+            return CallGSResult.Ok("{\"tbAwardList\":[]}");
         }
 
         var curLevel = player.Attributes.GetValue(VirCaptureGroupId, CurLevelSid);
@@ -78,7 +77,7 @@ public class VirCapture_GetLevelAward : ICallGSHandler
         {
             ["tbAwardList"] = responseAwards
         };
-        await CallGSRouter.SendScript(connection, "VirCapture_GetLevelAward", rsp.ToJsonString(), sync);
+        return CallGSResult.Ok(rsp.ToJsonString(), sync);
     }
 
     private static bool CanClaimLevel(PlayerInstance player, uint level)
@@ -264,7 +263,7 @@ public class VirCapture_GetLevelAward : ICallGSHandler
     }
 }
 
-internal sealed class VirCaptureGetLevelAwardParam
+public sealed class VirCaptureGetLevelAwardParam
 {
     [JsonPropertyName("nId")]
     public int ActId { get; set; }

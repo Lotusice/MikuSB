@@ -9,27 +9,25 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Gacha;
 
 [CallGSApi("Gacha_UpSelect")]
-public class Gacha_UpSelect : ICallGSHandler
+public class Gacha_UpSelect : CallGSHandler<GachaUpSelectParam>
 {
     private const uint GachaStrGid = AttrIds.Gacha.StringGid;
     private const int UpSelectIndex = 0;
     private const int UpSelectGetFlagIndex = 1;
     private const int UpPickPoolIndex = 2;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, GachaUpSelectParam req)
     {
-        var req = JsonSerializer.Deserialize<GachaUpSelectParam>(param);
-        var player = connection.Player!;
+
+        var player = context.Connection.Player!;
         if (req == null || req.NId == 0 || req.Gdpl == null || req.Gdpl.Count < 4)
         {
-            await CallGSRouter.SendScript(connection, "Gacha_UpSelect", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         if (!GameData.GachaData.TryGetValue((uint)req.NId, out var gachaCfg) || gachaCfg.UpSelect != 1)
         {
-            await CallGSRouter.SendScript(connection, "Gacha_UpSelect", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var valid = (gachaCfg.Pool ?? [])
@@ -45,8 +43,7 @@ public class Gacha_UpSelect : ICallGSHandler
 
         if (!valid)
         {
-            await CallGSRouter.SendScript(connection, "Gacha_UpSelect", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var existing = player.Attributes.GetStringValue(GachaStrGid, (uint)req.NId);
@@ -66,7 +63,7 @@ public class Gacha_UpSelect : ICallGSHandler
 
         var sync = new NtfSyncPlayer();
         player.Attributes.SyncTo(sync, attr);
-        await CallGSRouter.SendScript(connection, "Gacha_UpSelect", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 
     private static void EnsureArraySize(JArray state, int size)
@@ -76,7 +73,7 @@ public class Gacha_UpSelect : ICallGSHandler
     }
 }
 
-internal sealed class GachaUpSelectParam
+public sealed class GachaUpSelectParam
 {
     [JsonPropertyName("nId")]
     public int NId { get; set; }

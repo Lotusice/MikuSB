@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCaptureLevel_SaveCapture")]
-public class VirCaptureLevel_SaveCapture : ICallGSHandler
+public class VirCaptureLevel_SaveCapture : CallGSHandler<VirCaptureSaveCaptureParam>
 {
     private const uint VirCaptureGroupId = AttrIds.VirCapture.Gid;
     private const uint CurExpSid = AttrIds.VirCapture.CurrentExpSid;
@@ -20,30 +20,27 @@ public class VirCaptureLevel_SaveCapture : ICallGSHandler
     private const uint ColorMaxStartSid = AttrIds.VirCapture.ColorMaxStartSid;
     private const uint RikiGroupId = AttrIds.VirCapture.RikiGid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, VirCaptureSaveCaptureParam req)
     {
-        var req = JsonSerializer.Deserialize<VirCaptureSaveCaptureParam>(param);
+
         if (req == null || req.LevelId == 0 || req.RegionId == 0)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_SaveCapture", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         VirCaptureStateHelper.SetPointState(player, (uint)req.LevelId, (uint)req.RegionId, 2u, sync);
 
         if (!GameData.VirCaptureCaptureRegionData.TryGetValue((uint)req.LevelId, out var captureRegion))
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_SaveCapture", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var rewardGdpl = VirCaptureCaptureRewardResolver.ResolveGdpl(captureRegion, (uint)req.RegionId);
         if (rewardGdpl == null || rewardGdpl.Count < 4 || rewardGdpl[0] != (uint)ItemTypeEnum.TYPE_MONSTER_CARD)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_SaveCapture", "{\"sErr\":\"error.BadParam\"}", sync);
-            return;
+            return CallGSResult.Error("error.BadParam", sync);
         }
 
         var grantedItem = await player.InventoryManager.AddMonsterCardItem(
@@ -53,8 +50,7 @@ public class VirCaptureLevel_SaveCapture : ICallGSHandler
             sendPacket: false);
         if (grantedItem == null)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_SaveCapture", "{\"sErr\":\"error.BadParam\"}", sync);
-            return;
+            return CallGSResult.Error("error.BadParam", sync);
         }
 
         sync.Items.Add(grantedItem.ToProto());
@@ -72,7 +68,7 @@ public class VirCaptureLevel_SaveCapture : ICallGSHandler
             ["tbGDPL"] = new JsonArray(rewardGdpl.Select(x => JsonValue.Create((int)x)).ToArray())
         };
 
-        await CallGSRouter.SendScript(connection, "VirCaptureLevel_SaveCapture", response.ToJsonString(), sync);
+        return CallGSResult.Ok(response.ToJsonString(), sync);
     }
 
     private static void SyncVirCaptureCounters(MikuSB.GameServer.Game.Player.PlayerInstance player, ulong templateId, NtfSyncPlayer sync)
@@ -183,7 +179,7 @@ public class VirCaptureLevel_SaveCapture : ICallGSHandler
     }
 }
 
-internal sealed class VirCaptureSaveCaptureParam
+public sealed class VirCaptureSaveCaptureParam
 {
     [JsonPropertyName("nLevelID")]
     public int LevelId { get; set; }

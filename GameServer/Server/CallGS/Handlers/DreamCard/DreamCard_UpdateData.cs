@@ -9,13 +9,13 @@ using MikuSB.Data;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.DreamCard;
 
 [CallGSApi("DreamCard_UpdateData")]
-public class DreamCard_UpdateData : ICallGSHandler
+public class DreamCard_UpdateData : CallGSHandler
 {
     private const uint DataGroupId = AttrIds.DreamCard.DataGid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         var dirty = false;
 
@@ -41,7 +41,7 @@ public class DreamCard_UpdateData : ICallGSHandler
         if (dirty)
             DatabaseHelper.SaveDatabaseType(player.Data);
 
-        await CallGSRouter.SendScript(connection, "DreamCard_UpdateData", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 
     private static string NormalizeJson(JsonElement data)

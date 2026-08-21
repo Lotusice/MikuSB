@@ -8,7 +8,7 @@ using System.Text.Json.Nodes;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCapture_CheckOpenAct")]
-public class VirCapture_CheckOpenAct : ICallGSHandler
+public class VirCapture_CheckOpenAct : CallGSHandler
 {
     private const uint GroupId = AttrIds.VirCapture.Gid;
     private const uint ActIdSid = AttrIds.VirCapture.ActivitySid;
@@ -16,17 +16,16 @@ public class VirCapture_CheckOpenAct : ICallGSHandler
     private const uint TrialActIdSid = AttrIds.VirCapture.TrialActIdSid;
     private const uint SeasonActIdSid = AttrIds.VirCapture.SeasonActIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
         var now = DateTime.Now;
         var act = ResolveCurrent(GameData.VirCaptureTimeData.Values, now);
         if (act == null)
         {
-            await CallGSRouter.SendScript(connection, "VirCapture_CheckOpenAct", "{\"bOpen\":false}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{\"bOpen\":false}"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
 
         SetAttr(player, ActIdSid, act.Id, sync);
@@ -59,7 +58,7 @@ public class VirCapture_CheckOpenAct : ICallGSHandler
         var trial = ResolveCurrent(GameData.VirCaptureTrialTimeData.Values, now);
         SetAttr(player, TrialActIdSid, trial?.Id ?? 0, sync);
 
-        await CallGSRouter.SendScript(connection, "VirCapture_CheckOpenAct", response.ToJsonString(), sync);
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     private static T? ResolveCurrent<T>(IEnumerable<T> configs, DateTime now) where T : class

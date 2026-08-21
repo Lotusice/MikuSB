@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 
 [CallGSApi("ClimbTowerLogic_GetReward")]
-public class ClimbTowerLogic_GetReward : ICallGSHandler
+public class ClimbTowerLogic_GetReward : CallGSHandler<ClimbTowerGetRewardParam>
 {
     private const uint TowerGroupId = AttrIds.Tower.Gid;
     private const uint RewardStateSidBase = AttrIds.Tower.RewardStateSidBase;
@@ -21,41 +21,36 @@ public class ClimbTowerLogic_GetReward : ICallGSHandler
     private const uint LaunchPassGroupId = AttrIds.Tower.PassGid;
     private const uint AdvancedDiffSid = AttrIds.Tower.DiffSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, ClimbTowerGetRewardParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<ClimbTowerGetRewardParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.Layer <= 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var cycle = ResolveCurrentCycle(GameData.ClimbTowerTimeData.Values, DateTime.Now);
         if (cycle == null)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         if (!TryResolveLayer(cycle, req.Layer, player, out var towerIds, out var diff))
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         if (!GameData.ClimbTowerAwardData.TryGetValue((uint)req.Layer, out var diffMap) ||
             !diffMap.TryGetValue(diff, out var rewardCfg))
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var groups = ResolveRequestedGroups(req.Group);
         if (groups.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var claimableGroups = groups
@@ -65,8 +60,7 @@ public class ClimbTowerLogic_GetReward : ICallGSHandler
 
         if (claimableGroups.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var sync = new NtfSyncPlayer();
@@ -102,7 +96,7 @@ public class ClimbTowerLogic_GetReward : ICallGSHandler
             ["tbRewards"] = responseRewards
         };
 
-        await CallGSRouter.SendScript(connection, "ClimbTowerLogic_GetReward", rsp.ToJsonString(), sync);
+        return CallGSResult.Ok(rsp.ToJsonString(), sync);
     }
 
     private static async Task GrantRewardAsync(PlayerInstance player, NtfSyncPlayer sync, IReadOnlyList<uint> reward)
@@ -408,7 +402,7 @@ public class ClimbTowerLogic_GetReward : ICallGSHandler
 
 }
 
-internal sealed class ClimbTowerGetRewardParam
+public sealed class ClimbTowerGetRewardParam
 {
     [JsonPropertyName("nType")]
     public int? Type { get; set; }

@@ -8,33 +8,30 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 
 [CallGSApi("ClimbTowerLogic_SetLevelDiff")]
-public class ClimbTowerLogic_SetLevelDiff : ICallGSHandler
+public class ClimbTowerLogic_SetLevelDiff : CallGSHandler<ClimbTowerSetLevelDiffParam>
 {
     private const uint TowerGroupId = AttrIds.Tower.Gid;
     private const uint DiffSid = AttrIds.Tower.DiffSid;
     private const uint HisDiffSid = AttrIds.Tower.HistoryDiffSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, ClimbTowerSetLevelDiffParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<ClimbTowerSetLevelDiffParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.Diff <= 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_SetLevelDiff", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         if (!GameData.ClimbTowerDiffData.ContainsKey((uint)req.Diff))
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_SetLevelDiff", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var hisDiff = player.Attributes.GetValue(TowerGroupId, HisDiffSid);
         if (req.Diff > hisDiff + 1)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_SetLevelDiff", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var diffAttr = player.Attributes.GetOrCreate(TowerGroupId, DiffSid);
@@ -44,12 +41,12 @@ public class ClimbTowerLogic_SetLevelDiff : ICallGSHandler
         player.Attributes.SyncTo(sync, diffAttr);
 
         DatabaseHelper.SaveDatabaseType(player.Data);
-        await CallGSRouter.SendScript(connection, "ClimbTowerLogic_SetLevelDiff", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 
 }
 
-internal sealed class ClimbTowerSetLevelDiffParam
+public sealed class ClimbTowerSetLevelDiffParam
 {
     [JsonPropertyName("nDiff")]
     public int Diff { get; set; }

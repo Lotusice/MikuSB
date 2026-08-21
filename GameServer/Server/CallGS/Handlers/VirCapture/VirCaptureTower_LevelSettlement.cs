@@ -11,17 +11,17 @@ using MikuSB.Data;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCaptureTower_LevelSettlement")]
-public class VirCaptureTower_LevelSettlement : ICallGSHandler
+public class VirCaptureTower_LevelSettlement : CallGSHandler
 {
     private const uint LaunchLevelStateGroupId = AttrIds.Tower.LevelStateGid;
     private const uint LaunchPassGroupId = AttrIds.Tower.PassGid;
     private const uint PassedFlagBit = 1u << 8;
     private static readonly Logger Logger = new("VirCaptureTower");
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var (response, sync) = HandleSettlement(connection.Player!, JsonNode.Parse(param));
-        await CallGSRouter.SendScript(connection, "VirCaptureTower_LevelSettlement", response.ToJsonString(), sync);
+        var (response, sync) = HandleSettlement(context.Connection.Player!, JsonNode.Parse(param));
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     public static (JsonNode Response, NtfSyncPlayer Sync) HandleSettlement(PlayerInstance player, JsonNode? tbParam)

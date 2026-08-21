@@ -8,22 +8,21 @@ using System.Text.Json.Nodes;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.DLC;
 
 [CallGSApi("DLCLogic_CheckOpenAct")]
-public class DLCLogic_CheckOpenAct : ICallGSHandler
+public class DLCLogic_CheckOpenAct : CallGSHandler
 {
     private const uint GroupId = AttrIds.Dlc.Gid;
     private const uint ActIdSid = AttrIds.Dlc.ActIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
         var now = DateTime.Now;
         var act = ResolveCurrent(GameData.DlcActivityData.Values, now);
         if (act == null)
         {
-            await CallGSRouter.SendScript(connection, "DLCLogic_CheckOpenAct", "{\"bOpen\":false}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{\"bOpen\":false}"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         SetAttr(player, ActIdSid, act.Id, sync);
 
@@ -35,7 +34,7 @@ public class DLCLogic_CheckOpenAct : ICallGSHandler
             ["nEndTime"] = ToUnixSeconds(ParseConfigTime(act.CloseEndTime))
         };
 
-        await CallGSRouter.SendScript(connection, "DLCLogic_CheckOpenAct", response.ToJsonString(), sync);
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     private static DlcActivityExcel? ResolveCurrent(IEnumerable<DlcActivityExcel> configs, DateTime now)

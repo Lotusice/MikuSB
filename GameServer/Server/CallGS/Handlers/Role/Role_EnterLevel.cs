@@ -1,41 +1,37 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using MikuSB.Data;
 using MikuSB.GameServer.Game.Quest;
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Role;
 
+public sealed class RoleEnterLevelParam
+{
+    [JsonPropertyName("nID")]
+    public uint LevelId { get; set; }
+
+    [JsonPropertyName("nTeamID")]
+    public uint TeamId { get; set; }
+}
+
 // Success response shape expected by Lua: { nSeed = random_number }
 [CallGSApi("Role_EnterLevel")]
-public class Role_EnterLevel : ICallGSHandler
+public class Role_EnterLevel : CallGSHandler<RoleEnterLevelParam>
 {
     private static readonly Random _random = new Random();
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, RoleEnterLevelParam request)
     {
-        RoleEnterLevelParam request = JsonSerializer.Deserialize<RoleEnterLevelParam>(param)
-            ?? throw new InvalidOperationException("Role_EnterLevel request is empty.");
-
         if (request.LevelId == 0 || request.TeamId == 0 || !GameData.RoleLevelData.ContainsKey(request.LevelId) ||
-            !connection.Player!.QuestManager.CanEnterLevel(QuestLevelType.Role, request.LevelId))
+            !context.Player.QuestManager.CanEnterLevel(QuestLevelType.Role, request.LevelId))
         {
-            await CallGSRouter.SendScript(connection, "Role_EnterLevel", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         uint seed = (uint)_random.Next(1, 1000000000);
-        connection.Player.BeginLevelSession(QuestLevelType.Role, request.LevelId, seed, request.TeamId);
+        context.Player.BeginLevelSession(QuestLevelType.Role, request.LevelId, seed, request.TeamId);
 
         string rsp = $"{{\"nSeed\":{seed}}}";
-        await CallGSRouter.SendScript(connection, "Role_EnterLevel", rsp);
+        return Task.FromResult(CallGSResult.Ok(rsp));
     }
 
-    private sealed class RoleEnterLevelParam
-    {
-        [JsonPropertyName("nID")]
-        public uint LevelId { get; set; }
-
-        [JsonPropertyName("nTeamID")]
-        public uint TeamId { get; set; }
-    }
 }

@@ -1,41 +1,30 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using MikuSB.GameServer.Game.Quest;
+using MikuSB.GameServer.Server.CallGS;
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Chapter;
 
 [CallGSApi("Chapter_GetStarAward")]
-public sealed class Chapter_GetStarAward : ICallGSHandler
+public sealed class Chapter_GetStarAward : CallGSHandler<ChapterStarAwardParam>
 {
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, ChapterStarAwardParam request)
     {
-        var request = JsonSerializer.Deserialize<ChapterStarAwardParam>(param);
-        if (request == null || request.ChapterId == 0 || request.Difficult == 0)
-        {
-            await CallGSRouter.SendScript(connection, "Chapter_GetStarAward", "{\"sErr\":\"error.BadParam\"}");
-            return;
-        }
+        if (request.ChapterId == 0 || request.Difficult == 0)
+            return CallGSResult.Error("error.BadParam");
 
-        var result = await connection.Player!.QuestManager.ClaimChapterStarAwardsAsync(
+        var result = await context.Player.QuestManager.ClaimChapterStarAwardsAsync(
             request.IsMain,
             request.Difficult,
             request.ChapterId,
             request.AwardIndex);
         if (result == null)
-        {
-            await CallGSRouter.SendScript(connection, "Chapter_GetStarAward", "{\"sErr\":\"error.BadParam\"}");
-            return;
-        }
+            return CallGSResult.Error("error.BadParam");
 
-        await CallGSRouter.SendScript(
-            connection,
-            "Chapter_GetStarAward",
-            result.Value.Response.ToJsonString(),
-            result.Value.Sync);
+        return CallGSResult.Ok(result.Value.Response, result.Value.Sync);
     }
 }
 
-internal sealed class ChapterStarAwardParam
+public sealed class ChapterStarAwardParam
 {
     [JsonPropertyName("bMain")]
     public bool IsMain { get; set; }

@@ -9,34 +9,34 @@ using MikuSB.GameServer.Server.CallGS.Handlers.DreamCard;
 using MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 using MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 using MikuSB.Util;
+using MikuSB.GameServer.Server.CallGS;
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Chapter;
 
 [CallGSApi("Chapter_DealLevelSettlement")]
-public class Chapter_DealLevelSettlement : ICallGSHandler
+public class Chapter_DealLevelSettlement : CallGSHandler<DealLevelSettlementParam>
 {
     private static readonly Logger Logger = new("Chapter");
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, DealLevelSettlementParam request)
     {
-        var req = JsonSerializer.Deserialize<DealLevelSettlementParam>(param);
-        var (payload, extraSync) = await BuildSettlementPayloadAsync(connection, req?.SCmd, req?.TbParam);
+        var (payload, extraSync) = await BuildSettlementPayloadAsync(context.Player, request.SCmd, request.TbParam);
         var response = new JsonObject
         {
-            ["sCmd"] = req?.SCmd ?? "Chapter_LevelSettlement",
+            ["sCmd"] = request.SCmd ?? "Chapter_LevelSettlement",
             ["tbParam"] = payload
         };
 
-        await CallGSRouter.SendScript(connection, "Chapter_DealLevelSettlement", response.ToJsonString(), extraSync!);
+        return CallGSResult.Ok(response, extraSync);
     }
 
     private static async ValueTask<(JsonNode Payload, NtfSyncPlayer? Sync)> BuildSettlementPayloadAsync(
-        Connection connection,
+        PlayerInstance player,
         string? sCmd,
         JsonNode? tbParam)
     {
         if (string.Equals(sCmd, "Chapter_LevelSettlement", StringComparison.Ordinal))
-            return await HandleLevelSettlementAsync(connection.Player!, QuestLevelType.Chapter, tbParam);
+            return await HandleLevelSettlementAsync(player, QuestLevelType.Chapter, tbParam);
 
         if (string.Equals(sCmd, "Daily_LevelSettlement", StringComparison.Ordinal) ||
             string.Equals(sCmd, "Role_LevelSettlement", StringComparison.Ordinal))
@@ -44,48 +44,48 @@ public class Chapter_DealLevelSettlement : ICallGSHandler
             var levelType = string.Equals(sCmd, "Daily_LevelSettlement", StringComparison.Ordinal)
                 ? QuestLevelType.Daily
                 : QuestLevelType.Role;
-            return await HandleLevelSettlementAsync(connection.Player!, levelType, tbParam);
+            return await HandleLevelSettlementAsync(player, levelType, tbParam);
         }
 
         if (string.Equals(sCmd, "Chapter_NewPrologueSettlement", StringComparison.Ordinal))
         {
-            return await HandleNewPrologueSettlementAsync(connection.Player!, tbParam);
+            return await HandleNewPrologueSettlementAsync(player, tbParam);
         }
 
         if (string.Equals(sCmd, "BossPvpLogic_LevelSettlement", StringComparison.Ordinal))
         {
             var normalized = NormalizeBossPvpSettlement(tbParam);
-            var (response, sync) = BossPvpService.HandleSettlement(connection.Player!, normalized);
+            var (response, sync) = BossPvpService.HandleSettlement(player, normalized);
             return (response, sync);
         }
 
         if (string.Equals(sCmd, "BossPvpLogic_LevelFail", StringComparison.Ordinal))
         {
-            var (response, sync) = BossPvpService.HandleFail(connection.Player!, tbParam);
+            var (response, sync) = BossPvpService.HandleFail(player, tbParam);
             return (response, sync);
         }
 
         if (string.Equals(sCmd, "TowerLevel_LevelSettlement", StringComparison.Ordinal))
         {
-            var (response, sync) = TowerLevel_LevelSettlement.HandleSettlement(connection.Player!, tbParam);
+            var (response, sync) = TowerLevel_LevelSettlement.HandleSettlement(player, tbParam);
             return (response, sync);
         }
 
         if (string.Equals(sCmd, "TowerEventChapter_LevelSettlement", StringComparison.Ordinal))
         {
-            var (response, sync) = TowerEventChapter_LevelSettlement.HandleSettlement(connection.Player!, tbParam);
+            var (response, sync) = TowerEventChapter_LevelSettlement.HandleSettlement(player, tbParam);
             return (response, sync);
         }
 
         if (string.Equals(sCmd, "VirCaptureTower_LevelSettlement", StringComparison.Ordinal))
         {
-            var (response, sync) = VirCaptureTower_LevelSettlement.HandleSettlement(connection.Player!, tbParam);
+            var (response, sync) = VirCaptureTower_LevelSettlement.HandleSettlement(player, tbParam);
             return (response, sync);
         }
 
         if (string.Equals(sCmd, "DreamCard_LevelSettlement", StringComparison.Ordinal))
         {
-            var (response, sync) = DreamCard_LevelSettlement.HandleSettlement(connection.Player!, tbParam);
+            var (response, sync) = DreamCard_LevelSettlement.HandleSettlement(player, tbParam);
             return (response, sync);
         }
 
@@ -96,7 +96,7 @@ public class Chapter_DealLevelSettlement : ICallGSHandler
         PlayerInstance player,
         JsonNode? tbParam)
     {
-        var request = tbParam?.Deserialize<NewPrologueSettlementParam>();
+        var request = tbParam?.Deserialize<NewPrologueSettlementParam>(CallGSJson.Options);
         if (request == null || request.LevelId == 0)
         {
             Logger.Error($"Invalid plot settlement payload: {tbParam?.ToJsonString() ?? "null"}");
@@ -149,7 +149,7 @@ public class Chapter_DealLevelSettlement : ICallGSHandler
         QuestLevelType levelType,
         JsonNode? tbParam)
     {
-        var req = tbParam?.Deserialize<LevelSettlementParam>();
+        var req = tbParam?.Deserialize<LevelSettlementParam>(CallGSJson.Options);
         if (req == null || req.LevelId == 0)
         {
             Logger.Error($"Invalid level settlement payload: {tbParam?.ToJsonString() ?? "null"}");
@@ -195,7 +195,7 @@ public class Chapter_DealLevelSettlement : ICallGSHandler
     }
 }
 
-internal sealed class DealLevelSettlementParam
+public sealed class DealLevelSettlementParam
 {
     [JsonPropertyName("sCmd")]
     public string? SCmd { get; set; }
@@ -204,7 +204,7 @@ internal sealed class DealLevelSettlementParam
     public JsonNode? TbParam { get; set; }
 }
 
-internal sealed class LevelSettlementParam
+public sealed class LevelSettlementParam
 {
     [JsonPropertyName("nID")]
     public uint LevelId { get; set; }
@@ -216,7 +216,7 @@ internal sealed class LevelSettlementParam
     public uint Seed { get; set; }
 }
 
-internal sealed class NewPrologueSettlementParam
+public sealed class NewPrologueSettlementParam
 {
     [JsonPropertyName("nID")]
     public uint LevelId { get; set; }

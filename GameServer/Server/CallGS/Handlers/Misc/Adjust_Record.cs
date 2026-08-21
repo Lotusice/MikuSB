@@ -9,20 +9,19 @@ using MikuSB.Data;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Misc;
 
 [CallGSApi("Adjust_Record")]
-public class Adjust_Record : ICallGSHandler
+public class Adjust_Record : CallGSHandler<AdjustRecordParam>
 {
     private const uint GroupId = AttrIds.Adjust.Gid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, AdjustRecordParam req)
     {
-        var req = JsonSerializer.Deserialize<AdjustRecordParam>(param);
+
         if (req == null || req.Type == 0)
         {
-            await CallGSRouter.SendScript(connection, "Adjust_Record", "null");
-            return;
+            return Task.FromResult(CallGSResult.Ok("null"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         var attr = player.Attributes.GetOrCreate(GroupId, req.Type);
 
@@ -33,12 +32,12 @@ public class Adjust_Record : ICallGSHandler
             DatabaseHelper.SaveDatabaseType(player.Data);
         }
 
-        await CallGSRouter.SendScript(connection, "Adjust_Record", "null", sync);
+        return Task.FromResult(CallGSResult.Ok("null", sync));
     }
 
 }
 
-internal sealed class AdjustRecordParam
+public sealed class AdjustRecordParam
 {
     [JsonPropertyName("nType")]
     public uint Type { get; set; }

@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Gacha;
 
 [CallGSApi("Gacha_Launch")]
-public class Gacha_Launch : ICallGSHandler
+public class Gacha_Launch : CallGSHandler<GachaLaunchParam>
 {
     private const uint GachaGid = AttrIds.Gacha.Gid;
     private const uint GachaSgid = AttrIds.Gacha.StringGid;
@@ -30,20 +30,18 @@ public class Gacha_Launch : ICallGSHandler
     private const int UpSelectGetFlagIndex = 1;
     private static readonly Random Rng = new();
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, GachaLaunchParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<GachaLaunchParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.NId == 0 || req.NTime is not (1 or 10))
         {
-            await CallGSRouter.SendScript(connection, "Gacha_Launch", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         if (!GameData.GachaData.TryGetValue((uint)req.NId, out var gachaCfg))
         {
-            await CallGSRouter.SendScript(connection, "Gacha_Launch", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var poolNames = (gachaCfg.Pool ?? [])
@@ -55,8 +53,7 @@ public class Gacha_Launch : ICallGSHandler
 
         if (allPoolItems.Count == 0 || !GameData.GachaProbabilityData.TryGetValue(gachaCfg.Probability, out var baseProbCfg))
         {
-            await CallGSRouter.SendScript(connection, "Gacha_Launch", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var pityState = LoadPityState(player, gachaCfg);
@@ -160,8 +157,7 @@ public class Gacha_Launch : ICallGSHandler
 
         if (awards.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "Gacha_Launch", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         SavePityState(player, gachaCfg, pityState, awards.Count, sync);
@@ -173,7 +169,7 @@ public class Gacha_Launch : ICallGSHandler
         sync.Items.AddRange(syncItems);
 
         var rsp = BuildResponse(req.NId, awards, tbNew, tbTrigger);
-        await CallGSRouter.SendScript(connection, "Gacha_Launch", rsp, sync);
+        return CallGSResult.Ok(rsp, sync);
     }
 
     private static bool HasGuaranteedTenRarity(GachaRuntimeConfig config, List<List<uint>> awards)
@@ -504,7 +500,7 @@ public class Gacha_Launch : ICallGSHandler
     }
 }
 
-internal sealed class GachaLaunchParam
+public sealed class GachaLaunchParam
 {
     [JsonPropertyName("nId")]
     public int NId { get; set; }

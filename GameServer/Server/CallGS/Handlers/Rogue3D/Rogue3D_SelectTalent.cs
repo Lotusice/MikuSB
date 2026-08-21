@@ -11,32 +11,31 @@ namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 // param: {"nTalentId": int}
 // Response: {} on success, {"sErr": "key"} on failure
 [CallGSApi("Rogue3D_SelectTalent")]
-public class Rogue3D_SelectTalent : ICallGSHandler
+public class Rogue3D_SelectTalent : CallGSHandler<SelectTalentParam>
 {
     private const uint GroupId = AttrIds.Rogue3D.Gid;
     private const uint TalentIdSid = AttrIds.Rogue3D.TalentIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, SelectTalentParam req)
     {
-        var req = JsonSerializer.Deserialize<SelectTalentParam>(param);
+
         if (req == null)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_SelectTalent", "{}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{}"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var attr = player.Attributes.GetOrCreate(GroupId, TalentIdSid);
         attr.Val = req.TalentId;
 
         var sync = new NtfSyncPlayer();
         player.Attributes.SyncTo(sync, attr);
 
-        await CallGSRouter.SendScript(connection, "Rogue3D_SelectTalent", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 }
 
-internal sealed class SelectTalentParam
+public sealed class SelectTalentParam
 {
     [JsonPropertyName("nTalentId")]
     public uint TalentId { get; set; }

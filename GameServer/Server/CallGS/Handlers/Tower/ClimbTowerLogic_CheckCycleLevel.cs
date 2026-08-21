@@ -8,19 +8,18 @@ using MikuSB.Proto;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 
 [CallGSApi("ClimbTowerLogic_CheckCycleLevel")]
-public class ClimbTowerLogic_CheckCycleLevel : ICallGSHandler
+public class ClimbTowerLogic_CheckCycleLevel : CallGSHandler
 {
     private const uint TowerGroupId = AttrIds.Tower.Gid;
     private const uint TimeSubId = AttrIds.Tower.TimeSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var current = ResolveCurrentCycle(GameData.ClimbTowerTimeData.Values, DateTime.Now);
         if (current == null)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_CheckCycleLevel", "{}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{}"));
         }
 
         var currentTimeId = player.Attributes.GetValue(TowerGroupId, TimeSubId);
@@ -33,7 +32,7 @@ public class ClimbTowerLogic_CheckCycleLevel : ICallGSHandler
             DatabaseHelper.SaveDatabaseType(player.Data);
         }
 
-        await CallGSRouter.SendScript(connection, "ClimbTowerLogic_CheckCycleLevel", $$"""{"timeID":{{current.ID}}}""", sync);
+        return Task.FromResult(CallGSResult.Ok($$"""{"timeID":{{current.ID}}}""", sync));
     }
 
     private static ClimbTowerTimeExcel? ResolveCurrentCycle(IEnumerable<ClimbTowerTimeExcel> configs, DateTime now)

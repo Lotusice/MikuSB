@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCaptureLevel_EnterLevel")]
-public class VirCaptureLevel_EnterLevel : ICallGSHandler
+public class VirCaptureLevel_EnterLevel : CallGSHandler<VirCaptureEnterLevelParam>
 {
     private const uint GroupId = AttrIds.VirCapture.Gid;
     private const uint MapDataStart = AttrIds.VirCapture.MapDataStartSid;
@@ -20,43 +20,39 @@ public class VirCaptureLevel_EnterLevel : ICallGSHandler
     private const uint OffMapLevel = 8;
     private static readonly Random Random = new();
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, VirCaptureEnterLevelParam req)
     {
-        var req = JsonSerializer.Deserialize<VirCaptureEnterLevelParam>(param);
+
         if (req == null || req.LevelId == 0 || req.TeamId <= 0)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_EnterLevel", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var now = DateTime.Now;
         var act = ResolveCurrent(GameData.VirCaptureTimeData.Values, now);
         if (act == null || !act.CaptureRegionId.Contains((uint)req.LevelId))
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_EnterLevel", "{\"sErr\":\"ui.TxtNotOpen\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("ui.TxtNotOpen"));
         }
 
         if (!GameData.VirCaptureCaptureRegionData.TryGetValue((uint)req.LevelId, out var region))
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_EnterLevel", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var regionStart = ParseConfigTime(region.StartTime);
         var regionEnd = ParseConfigTime(region.EndTime);
         if (!regionStart.HasValue || !regionEnd.HasValue || now < regionStart.Value || now >= regionEnd.Value)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureLevel_EnterLevel", "{\"sErr\":\"ui.TxtNotOpen\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("ui.TxtNotOpen"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         EnsureMapState(player, (uint)req.LevelId, sync);
 
         var rsp = $"{{\"nSeed\":{Random.Next(1, 1_000_000_000)}}}";
-        await CallGSRouter.SendScript(connection, "VirCaptureLevel_EnterLevel", rsp, sync);
+        return Task.FromResult(CallGSResult.Ok(rsp, sync));
     }
 
     private static void EnsureMapState(PlayerInstance player, uint levelId, NtfSyncPlayer sync)
@@ -148,7 +144,7 @@ public class VirCaptureLevel_EnterLevel : ICallGSHandler
     }
 }
 
-internal sealed class VirCaptureEnterLevelParam
+public sealed class VirCaptureEnterLevelParam
 {
     [JsonPropertyName("nLevelID")]
     public int LevelId { get; set; }

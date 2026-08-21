@@ -11,34 +11,32 @@ namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 // param: {"nDiffId": int}
 // Response: {} on success, {"sErr": "key"} on failure
 [CallGSApi("Rogue3D_SelectDiff")]
-public class Rogue3D_SelectDiff : ICallGSHandler
+public class Rogue3D_SelectDiff : CallGSHandler<SelectDiffParam>
 {
     private const uint GroupId = AttrIds.Rogue3D.Gid;
     private const uint CurDiffSid = AttrIds.Rogue3D.CurDiffSid;
     private const uint GameplayIdSid = AttrIds.Rogue3D.GameplayIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, SelectDiffParam req)
     {
-        var req = JsonSerializer.Deserialize<SelectDiffParam>(param);
+
         if (req == null)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_SelectDiff", "{}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{}"));
         }
 
         if (!GameData.Rogue3DDifficultData.TryGetValue(req.DiffId, out var cfg) || cfg.GameplayGroup.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_SelectDiff", "{\"sErr\":\"rogue3.massage_gameProcessError\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("rogue3.massage_gameProcessError"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
 
         SetAttr(player, CurDiffSid, req.DiffId, sync);
         SetAttr(player, GameplayIdSid, cfg.GameplayGroup[0], sync);
 
-        await CallGSRouter.SendScript(connection, "Rogue3D_SelectDiff", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 
     private static void SetAttr(PlayerInstance player, uint sid, uint val, NtfSyncPlayer sync)
@@ -49,7 +47,7 @@ public class Rogue3D_SelectDiff : ICallGSHandler
     }
 }
 
-internal sealed class SelectDiffParam
+public sealed class SelectDiffParam
 {
     [JsonPropertyName("nDiffId")]
     public uint DiffId { get; set; }

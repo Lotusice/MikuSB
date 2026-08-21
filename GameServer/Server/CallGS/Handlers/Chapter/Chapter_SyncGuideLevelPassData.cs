@@ -1,15 +1,15 @@
 using System.Text.Json.Nodes;
 using MikuSB.GameServer.Game.Quest;
+using MikuSB.GameServer.Server.CallGS;
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Chapter;
 
 [CallGSApi("Chapter_SyncGuideLevelPassData")]
-public class Chapter_SyncGuideLevelPassData : ICallGSHandler
+public class Chapter_SyncGuideLevelPassData : CallGSHandler<JsonNode>
 {
-    public Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, JsonNode request)
     {
-        var payload = JsonNode.Parse(param);
-        connection.Player!.QuestManager.SyncGuideLevelPassData(payload);
-        return Task.CompletedTask;
+        context.Player.QuestManager.SyncGuideLevelPassData(request);
+        return Task.FromResult(CallGSResult.NoResponse());
     }
 }

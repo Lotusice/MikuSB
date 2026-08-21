@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Fishing;
 
 [CallGSApi("FishingServer_ConvertFood")]
-public class FishingServer_ConvertFood : ICallGSHandler
+public class FishingServer_ConvertFood : CallGSHandler<FishingConvertFoodParam>
 {
     private const uint FishingGroupId = AttrIds.Fishing.Gid;
     private const uint CashGroupId = AttrIds.CurrencyGid;
@@ -20,20 +20,18 @@ public class FishingServer_ConvertFood : ICallGSHandler
     private const uint FoodAvaTimeSubType = 1;
     private const uint ExploreAvaTimeSubType = 2;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, FishingConvertFoodParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<FishingConvertFoodParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.FoodId <= 0 || req.Num <= 0)
         {
-            await CallGSRouter.SendScript(connection, "FishingServer_ConvertFood", "{\"sError\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Ok("{\"sError\":\"error.BadParam\"}");
         }
 
         if (!GameData.FishingFoodData.TryGetValue((uint)req.FoodId, out var food))
         {
-            await CallGSRouter.SendScript(connection, "FishingServer_ConvertFood", "{\"sError\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Ok("{\"sError\":\"error.BadParam\"}");
         }
 
         var count = Math.Max(1u, req.Num);
@@ -42,8 +40,7 @@ public class FishingServer_ConvertFood : ICallGSHandler
         if (!HasEnoughMaterials(player.InventoryManager.InventoryData, food.NeedItem, count) ||
             !HasEnoughCash(player.Attributes, food.BaitNum, count))
         {
-            await CallGSRouter.SendScript(connection, "FishingServer_ConvertFood", "{\"sError\":\"tip.girlcard_cmd_err\"}");
-            return;
+            return CallGSResult.Ok("{\"sError\":\"tip.girlcard_cmd_err\"}");
         }
 
         ConsumeMaterials(player.InventoryManager.InventoryData, food.NeedItem, count, sync.Items);
@@ -69,14 +66,13 @@ public class FishingServer_ConvertFood : ICallGSHandler
                 ApplyFoodDuration(player, food, ExploreAvaTimeSubType, count, sync);
                 break;
             default:
-                await CallGSRouter.SendScript(connection, "FishingServer_ConvertFood", "{\"sError\":\"error.BadParam\"}");
-                return;
+                return CallGSResult.Ok("{\"sError\":\"error.BadParam\"}");
         }
 
         DatabaseHelper.SaveDatabaseType(player.InventoryManager.InventoryData);
         DatabaseHelper.SaveDatabaseType(player.Data);
 
-        await CallGSRouter.SendScript(connection, "FishingServer_ConvertFood", response.ToJsonString(), sync);
+        return CallGSResult.Ok(response.ToJsonString(), sync);
     }
 
     private static bool HasEnoughMaterials(InventoryData inventory, IEnumerable<List<uint>> costs, uint multiplier)
@@ -218,7 +214,7 @@ public class FishingServer_ConvertFood : ICallGSHandler
 
 }
 
-internal sealed class FishingConvertFoodParam
+public sealed class FishingConvertFoodParam
 {
     [JsonPropertyName("nFoodID")]
     public int FoodId { get; set; }

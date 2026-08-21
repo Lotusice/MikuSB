@@ -9,20 +9,19 @@ using MikuSB.Data;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Shop;
 
 [CallGSApi("IBLogic_GoodsRedDot")]
-public class IBLogic_GoodsRedDot : ICallGSHandler
+public class IBLogic_GoodsRedDot : CallGSHandler<IbGoodsRedDotParam>
 {
     private const uint RedGroupId = AttrIds.Shop.RedDotGid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, IbGoodsRedDotParam req)
     {
-        var req = JsonSerializer.Deserialize<IbGoodsRedDotParam>(param);
+
         if (req?.GoodsIds == null || req.GoodsIds.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "IBLogic_GoodsRedDot", "null");
-            return;
+            return Task.FromResult(CallGSResult.Ok("null"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
         var changed = false;
 
@@ -40,12 +39,12 @@ public class IBLogic_GoodsRedDot : ICallGSHandler
         if (changed)
             DatabaseHelper.SaveDatabaseType(player.Data);
 
-        await CallGSRouter.SendScript(connection, "IBLogic_GoodsRedDot", "null", sync);
+        return Task.FromResult(CallGSResult.Ok("null", sync));
     }
 
 }
 
-internal sealed class IbGoodsRedDotParam
+public sealed class IbGoodsRedDotParam
 {
     [JsonPropertyName("tbList")]
     public List<uint> GoodsIds { get; set; } = [];

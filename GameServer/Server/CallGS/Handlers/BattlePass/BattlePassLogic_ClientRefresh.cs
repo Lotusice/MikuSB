@@ -8,23 +8,22 @@ using System.Text.Json.Nodes;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.BattlePass;
 
 [CallGSApi("BattlePassLogic_ClientRefresh")]
-public class BattlePassLogic_ClientRefresh : ICallGSHandler
+public class BattlePassLogic_ClientRefresh : CallGSHandler
 {
     private const uint GroupId = AttrIds.BattlePass.Gid;
     private const uint CurIdSid = AttrIds.BattlePass.CurrentIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
         var now = DateTime.Now;
         var battlePass = ResolveCurrent(GameData.BattlePassTimeData.Values, now);
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var sync = new NtfSyncPlayer();
 
         if (battlePass == null)
         {
             SetAttr(player, CurIdSid, 0, sync);
-            await CallGSRouter.SendScript(connection, "BattlePassLogic_ClientRefresh", "{}", sync);
-            return;
+            return Task.FromResult(CallGSResult.Ok("{}", sync));
         }
 
         SetAttr(player, CurIdSid, battlePass.Id, sync);
@@ -36,7 +35,7 @@ public class BattlePassLogic_ClientRefresh : ICallGSHandler
             ["nEndTime"] = ToUnixSeconds(ParseConfigTime(battlePass.EndTime))
         };
 
-        await CallGSRouter.SendScript(connection, "BattlePassLogic_ClientRefresh", response.ToJsonString(), sync);
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     private static BattlePassTimeExcel? ResolveCurrent(IEnumerable<BattlePassTimeExcel> configs, DateTime now)

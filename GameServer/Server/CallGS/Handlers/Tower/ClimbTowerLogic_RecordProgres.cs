@@ -10,35 +10,32 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 
 [CallGSApi("ClimbTowerLogic_RecordProgres")]
-public class ClimbTowerLogic_RecordProgres : ICallGSHandler
+public class ClimbTowerLogic_RecordProgres : CallGSHandler<ClimbTowerRecordProgressParam>
 {
     private const uint TowerGroupId = AttrIds.Tower.Gid;
     private const uint BasicProgressSid = AttrIds.Tower.BasicProgressSid;
     private const uint AdvancedProgressSid = AttrIds.Tower.AdvancedProgressSid;
     private const uint LevelStateSidBase = AttrIds.Tower.LevelStateSidBase;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, ClimbTowerRecordProgressParam req)
     {
-        var player = connection.Player!;
-        var req = JsonSerializer.Deserialize<ClimbTowerRecordProgressParam>(param);
+        var player = context.Connection.Player!;
+
         if (req == null || req.LevelId == 0 || req.Area <= 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_RecordProgres", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var cycle = ResolveCurrentCycle(GameData.ClimbTowerTimeData.Values, DateTime.Now);
         if (cycle == null)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_RecordProgres", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var towerType = ResolveTowerType(cycle, (uint)req.LevelId);
         if (towerType == 0)
         {
-            await CallGSRouter.SendScript(connection, "ClimbTowerLogic_RecordProgres", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         var sync = new NtfSyncPlayer();
@@ -59,7 +56,7 @@ public class ClimbTowerLogic_RecordProgres : ICallGSHandler
         }
 
         DatabaseHelper.SaveDatabaseType(player.Data);
-        await CallGSRouter.SendScript(connection, "ClimbTowerLogic_RecordProgres", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 
     private static void SaveRoleState(
@@ -180,7 +177,7 @@ public class ClimbTowerLogic_RecordProgres : ICallGSHandler
 
 }
 
-internal sealed class ClimbTowerRecordProgressParam
+public sealed class ClimbTowerRecordProgressParam
 {
     [JsonPropertyName("nID")]
     public int LevelId { get; set; }

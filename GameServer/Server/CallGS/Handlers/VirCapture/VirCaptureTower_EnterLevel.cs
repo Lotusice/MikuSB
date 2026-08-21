@@ -6,36 +6,33 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.VirCapture;
 
 [CallGSApi("VirCaptureTower_EnterLevel")]
-public class VirCaptureTower_EnterLevel : ICallGSHandler
+public class VirCaptureTower_EnterLevel : CallGSHandler<VirCaptureTowerEnterLevelParam>
 {
     private const uint LaunchPassGroupId = AttrIds.Tower.PassGid;
     private const uint VirCaptureGroupId = AttrIds.VirCapture.Gid;
     private const uint VirCaptureLevelSid = AttrIds.VirCapture.CurrentLevelSid;
     private static readonly Random Random = new();
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, VirCaptureTowerEnterLevelParam req)
     {
-        var req = JsonSerializer.Deserialize<VirCaptureTowerEnterLevelParam>(param);
+
         if (req == null || req.LevelId <= 0 || req.TeamId <= 0)
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureTower_EnterLevel", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
         if (!GameData.VirCaptureTowerData.TryGetValue((uint)req.LevelId, out var levelCfg))
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureTower_EnterLevel", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("error.BadParam"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         if (!CheckConditions(player, levelCfg.Condition))
         {
-            await CallGSRouter.SendScript(connection, "VirCaptureTower_EnterLevel", "{\"sErr\":\"tip.LevelLocked\"}");
-            return;
+            return Task.FromResult(CallGSResult.Error("tip.LevelLocked"));
         }
 
-        await CallGSRouter.SendScript(connection, "VirCaptureTower_EnterLevel", $"{{\"nSeed\":{Random.Next(1, 1_000_000_000)}}}");
+        return Task.FromResult(CallGSResult.Ok($"{{\"nSeed\":{Random.Next(1, 1_000_000_000)}}}"));
     }
 
     private static bool CheckConditions(PlayerInstance player, IReadOnlyDictionary<int, uint> conditions)
@@ -69,7 +66,7 @@ public class VirCaptureTower_EnterLevel : ICallGSHandler
     }
 }
 
-internal sealed class VirCaptureTowerEnterLevelParam
+public sealed class VirCaptureTowerEnterLevelParam
 {
     [JsonPropertyName("nID")]
     public int LevelId { get; set; }

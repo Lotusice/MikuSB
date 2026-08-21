@@ -11,32 +11,31 @@ namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 // param: {"nTalentId": int}
 // Response: {} on success, {"sErr": "key"} on failure
 [CallGSApi("Rogue3D_SelectSeasonTalent")]
-public class Rogue3D_SelectSeasonTalent : ICallGSHandler
+public class Rogue3D_SelectSeasonTalent : CallGSHandler<SelectSeasonTalentParam>
 {
     private const uint GroupId = AttrIds.Rogue3D.Gid;
     private const uint SeasonTalentIdSid = AttrIds.Rogue3D.SeasonTalentIdSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, SelectSeasonTalentParam req)
     {
-        var req = JsonSerializer.Deserialize<SelectSeasonTalentParam>(param);
+
         if (req == null)
         {
-            await CallGSRouter.SendScript(connection, "Rogue3D_SelectSeasonTalent", "{}");
-            return;
+            return Task.FromResult(CallGSResult.Ok("{}"));
         }
 
-        var player = connection.Player!;
+        var player = context.Connection.Player!;
         var attr = player.Attributes.GetOrCreate(GroupId, SeasonTalentIdSid);
         attr.Val = req.TalentId;
 
         var sync = new NtfSyncPlayer();
         player.Attributes.SyncTo(sync, attr);
 
-        await CallGSRouter.SendScript(connection, "Rogue3D_SelectSeasonTalent", "{}", sync);
+        return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 }
 
-internal sealed class SelectSeasonTalentParam
+public sealed class SelectSeasonTalentParam
 {
     [JsonPropertyName("nTalentId")]
     public uint TalentId { get; set; }

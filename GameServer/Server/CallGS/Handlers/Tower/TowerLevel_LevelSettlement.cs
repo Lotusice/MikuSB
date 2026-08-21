@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Tower;
 
 [CallGSApi("TowerLevel_LevelSettlement")]
-public class TowerLevel_LevelSettlement : ICallGSHandler
+public class TowerLevel_LevelSettlement : CallGSHandler
 {
     private static readonly Logger Logger = new("Tower");
     private const uint TowerGroupId = AttrIds.Tower.Gid;
@@ -21,10 +21,10 @@ public class TowerLevel_LevelSettlement : ICallGSHandler
     private const uint LevelStateSidBase = AttrIds.Tower.LevelStateSidBase;
     private const int FinalArea = 3;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var (response, sync) = HandleSettlement(connection.Player!, JsonNode.Parse(param));
-        await CallGSRouter.SendScript(connection, "TowerLevel_LevelSettlement", response.ToJsonString(), sync);
+        var (response, sync) = HandleSettlement(context.Connection.Player!, JsonNode.Parse(param));
+        return Task.FromResult(CallGSResult.Ok(response.ToJsonString(), sync));
     }
 
     public static (JsonNode Response, NtfSyncPlayer Sync) HandleSettlement(PlayerInstance player, JsonNode? tbParam)

@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Shop;
 
 [CallGSApi("IBLogic_BuyGoods")]
-public class IBLogic_BuyGoods : ICallGSHandler
+public class IBLogic_BuyGoods : CallGSHandler<IbBuyGoodsParam>
 {
     private const uint BuyGroupId = AttrIds.Shop.PurchaseGid;
     private const uint RedGroupId = AttrIds.Shop.RedDotGid;
@@ -23,23 +23,21 @@ public class IBLogic_BuyGoods : ICallGSHandler
     private const uint BattlePassCurIdSid = AttrIds.BattlePass.CurrentIdSid;
     private const uint BattlePassStatusSid = AttrIds.BattlePass.StatusSid;
 
-    public async Task Handle(Connection connection, string param, ushort seqNo)
+    protected override async Task<CallGSResult> HandleAsync(CallGSContext context, IbBuyGoodsParam req)
     {
-        var req = JsonSerializer.Deserialize<IbBuyGoodsParam>(param);
-        var player = connection.Player!;
+
+        var player = context.Connection.Player!;
         if (req?.Type == 3 && req.GoodsId > 0 && req.Count > 0)
         {
-            await HandleBattlePassPurchase(connection, player, req);
-            return;
-        }
+            return await HandleBattlePassPurchase(player, req);
+}
 
         if (req == null ||
             req.GoodsId == 0 ||
             req.Count == 0 ||
             !GameData.IbGoodsData.TryGetValue(req.GoodsId, out var goods))
         {
-            await CallGSRouter.SendScript(connection, "IBLogic_BuyGoods", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         if (goods.LimitTimes > 0)
@@ -47,16 +45,14 @@ public class IBLogic_BuyGoods : ICallGSHandler
             var buyAttr = player.Attributes.GetOrCreate(BuyGroupId, req.GoodsId);
             if (buyAttr.Val >= goods.LimitTimes)
             {
-                await CallGSRouter.SendScript(connection, "IBLogic_BuyGoods", "{\"sErr\":\"tip.Mall_Limit_Buy\"}");
-                return;
+                return CallGSResult.Error("tip.Mall_Limit_Buy");
             }
         }
 
         var rewardItems = BuildRewardItems(goods, req);
         if (rewardItems.Count == 0)
         {
-            await CallGSRouter.SendScript(connection, "IBLogic_BuyGoods", "{\"sErr\":\"error.BadParam\"}");
-            return;
+            return CallGSResult.Error("error.BadParam");
         }
 
         var sync = new NtfSyncPlayer();
@@ -101,10 +97,10 @@ public class IBLogic_BuyGoods : ICallGSHandler
         if (cost.Count >= 2)
             rsp["nTotalPrice"] = (int)cost[1];
 
-        await CallGSRouter.SendScript(connection, "IBLogic_BuyGoods", rsp.ToJsonString(), sync);
+        return CallGSResult.Ok(rsp.ToJsonString(), sync);
     }
 
-    private static async Task HandleBattlePassPurchase(Connection connection, PlayerInstance player, IbBuyGoodsParam req)
+    private static Task<CallGSResult> HandleBattlePassPurchase(PlayerInstance player, IbBuyGoodsParam req)
     {
         var sync = new NtfSyncPlayer();
         var battlePassId = ResolveCurrentBattlePassId();
@@ -141,7 +137,7 @@ public class IBLogic_BuyGoods : ICallGSHandler
             ["tbGoods"] = new JsonArray()
         };
 
-        await CallGSRouter.SendScript(connection, "IBLogic_BuyGoods", rsp.ToJsonString(), sync);
+        return Task.FromResult(CallGSResult.Ok(rsp.ToJsonString(), sync));
     }
 
     private static List<List<uint>> BuildRewardItems(IbGoodsExcel goods, IbBuyGoodsParam req)
@@ -409,7 +405,7 @@ public class IBLogic_BuyGoods : ICallGSHandler
 
 }
 
-internal sealed class IbBuyGoodsParam
+public sealed class IbBuyGoodsParam
 {
     [JsonPropertyName("nType")]
     public int Type { get; set; }
