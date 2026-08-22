@@ -11,6 +11,11 @@ public static class GameLaunchService
     public static int Launch(params string[] extraGameArguments)
     {
         ConfigManager.LoadConfig();
+        if (ConfigManager.Config.Loader.EnableInGameConsole
+            && ConfigManager.Config.Loader.AutoUpdateInGameConsole)
+        {
+            InGameConsoleDownloadService.EnsurePresent();
+        }
         PatchDownloadService.EnsurePatchPresent();
         var options = LaunchOptions.FromConfig(extraGameArguments);
         return Launch(options);
