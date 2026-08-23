@@ -383,7 +383,10 @@ public static class AttrIds
         public const uint EnterFlagSid = 8;
         public const uint DailyCountSid = 9;
         public const uint TechLevelStartSid = 100;
+        public const uint TechLevelEndSid = 300;
         public const uint TechRestrictStartSid = 500;
+        public const uint TechRestrictEndSid = 700;
+        public const uint TechPointCurrencyType = 25;
         public const uint SeasonActivitySid = 1001;
         public const uint SeasonLevelOpenNumSid = 1004;
         public const uint SeasonGameplayIdSid = 1006;
