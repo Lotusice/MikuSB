@@ -14,19 +14,17 @@ public sealed class RikiManager(PlayerInstance player) : BasePlayerManager(playe
         uint level,
         NtfSyncPlayer? sync = null)
     {
-        if (genre is not (ItemTypeEnum.TYPE_CARD or ItemTypeEnum.TYPE_WEAPON))
+        if (genre is not (ItemTypeEnum.TYPE_CARD or ItemTypeEnum.TYPE_WEAPON or ItemTypeEnum.TYPE_CARD_SKIN))
         {
             return;
         }
 
-        var type = (uint)genre;
         foreach (var riki in GameData.RikiData.Values)
         {
-            if (riki.Type != type ||
-                riki.Condition[0] != type ||
-                riki.Condition[1] != detail ||
-                riki.Condition[2] != particular ||
-                riki.Condition[3] != level)
+            if (riki.ItemCondition[0] != (uint)genre ||
+                riki.ItemCondition[1] != detail ||
+                riki.ItemCondition[2] != particular ||
+                riki.ItemCondition[3] != level)
             {
                 continue;
             }
@@ -51,6 +49,16 @@ public sealed class RikiManager(PlayerInstance player) : BasePlayerManager(playe
         {
             var config = GameData.WeaponData.Values.FirstOrDefault(x =>
                 GameResourceTemplateId.FromGdpl(x.Genre, x.Detail, x.Particular, x.Level) == weapon.TemplateId);
+            if (config != null)
+            {
+                UnlockItem((ItemTypeEnum)config.Genre, config.Detail, config.Particular, config.Level, sync);
+            }
+        }
+
+        foreach (var skin in Player.InventoryManager.InventoryData.Skins.Values)
+        {
+            var config = GameData.CardSkinData.Values.FirstOrDefault(x =>
+                GameResourceTemplateId.FromGdpl(x.Genre, x.Detail, x.Particular, x.Level) == skin.TemplateId);
             if (config != null)
             {
                 UnlockItem((ItemTypeEnum)config.Genre, config.Detail, config.Particular, config.Level, sync);

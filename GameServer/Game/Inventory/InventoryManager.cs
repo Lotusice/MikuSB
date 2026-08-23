@@ -79,6 +79,7 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
             ItemCount = 1
         };
         InventoryData.Skins[skinInfo.UniqueId] = skinInfo;
+        Player.RikiManager.UnlockItem(genre, detail, particular, level);
 
         if (sendPacket) await Player.SendPacket(new PacketNtfCallScript([skinInfo]));
 

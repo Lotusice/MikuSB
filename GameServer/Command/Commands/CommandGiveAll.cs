@@ -303,7 +303,12 @@ public class CommandGiveAll : ICommands
             }
             skinItems.Add(skin);
         }
-        if (skinItems.Count > 0) await player.SendPacket(new PacketNtfCallScript(skinItems));
+        if (skinItems.Count > 0)
+        {
+            await player.SendPacket(new PacketNtfCallScript(skinItems));
+            await player.SendPacket(new PacketNtfCallScript(player));
+            DatabaseHelper.SaveDatabaseType(player.Data);
+        }
         DatabaseHelper.SaveDatabaseType(player.InventoryManager.InventoryData);
         await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
             I18NManager.Translate("Word.Skin"), skinItems.Count.ToString()));
