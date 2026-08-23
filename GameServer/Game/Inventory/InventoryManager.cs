@@ -30,6 +30,7 @@ public class InventoryManager(PlayerInstance player) : BasePlayerManager(player)
             ItemCount = 1
         };
         InventoryData.Weapons[weaponInfo.UniqueId] = weaponInfo;
+        Player.RikiManager.UnlockItem(genre, detail, particular, level);
 
         if (sendPacket) await Player.SendPacket(new PacketNtfCallScript([weaponInfo]));
 

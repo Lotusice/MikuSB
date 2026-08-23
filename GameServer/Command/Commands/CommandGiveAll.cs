@@ -42,7 +42,12 @@ public class CommandGiveAll : ICommands
             }
             weapons.Add(weapon);
         }
-        if (weapons.Count > 0) await player.SendPacket(new PacketNtfCallScript(weapons));
+        if (weapons.Count > 0)
+        {
+            await player.SendPacket(new PacketNtfCallScript(weapons));
+            await player.SendPacket(new PacketNtfCallScript(player));
+            DatabaseHelper.SaveDatabaseType(player.Data);
+        }
         DatabaseHelper.SaveDatabaseType(player.InventoryManager.InventoryData);
         await arg.SendMsg(I18NManager.Translate("Game.Command.GiveAll.GiveAllItems",
             I18NManager.Translate("Word.Weapon"), weapons.Count.ToString()));
