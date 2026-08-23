@@ -2,7 +2,7 @@ using MikuSB.Data;
 using MikuSB.Data.Excel;
 using MikuSB.GameServer.Game.Player;
 
-namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
+namespace MikuSB.GameServer.Game.Rogue3D;
 
 internal static class Rogue3DTechHelper
 {

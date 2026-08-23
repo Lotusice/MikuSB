@@ -1,7 +1,5 @@
-using MikuSB.Data;
-using MikuSB.Database;
-using MikuSB.Proto;
 using System.Text.Json.Serialization;
+using MikuSB.GameServer.Game.Rogue3D;
 
 namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
 
@@ -10,31 +8,19 @@ public class Rogue3D_RestrictTech : CallGSHandler<RestrictTechParam>
 {
     protected override Task<CallGSResult> HandleAsync(CallGSContext context, RestrictTechParam req)
     {
-        if (req.Restrict > 1 || !Rogue3DTechHelper.TryGetScience(req.TechId, out _))
+        var result = context.Player.Rogue3DManager.RestrictTech(req.TechId, req.Restrict);
+        return Task.FromResult(ToCallGSResult(result));
+    }
+
+    private static CallGSResult ToCallGSResult(Rogue3DTechResult result)
+    {
+        return result.Error switch
         {
-            return Task.FromResult(CallGSResult.Error("error.BadParam"));
-        }
-
-        var player = context.Player;
-        if (player.Attributes.GetValue(AttrIds.Rogue3D.Gid, req.TechId) == 0)
-        {
-            return Task.FromResult(CallGSResult.Error("error.condition_limit"));
-        }
-
-        var restriction = player.Attributes.GetOrCreate(
-            AttrIds.Rogue3D.Gid,
-            Rogue3DTechHelper.GetRestrictionSid(req.TechId));
-        if (restriction.Val == req.Restrict)
-        {
-            return Task.FromResult(CallGSResult.Ok());
-        }
-
-        restriction.Val = req.Restrict;
-        var sync = new NtfSyncPlayer();
-        player.Attributes.SyncTo(sync, restriction);
-        DatabaseHelper.SaveDatabaseType(player.Data);
-
-        return Task.FromResult(CallGSResult.Ok("{}", sync));
+            Rogue3DTechError.None => CallGSResult.Ok("{}", result.Sync),
+            Rogue3DTechError.BadParam => CallGSResult.Error("error.BadParam"),
+            Rogue3DTechError.ConditionLimit => CallGSResult.Error("error.condition_limit"),
+            _ => throw new ArgumentOutOfRangeException(nameof(result.Error), result.Error, null)
+        };
     }
 }
 

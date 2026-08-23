@@ -8,7 +8,7 @@ public class Rogue3D_SelectMode : CallGSHandler
 {
     protected override Task<CallGSResult> HandleAsync(CallGSContext context, string param)
     {
-        var sync = Rogue3DStateHelper.EnsureUnlockState(context.Connection.Player!);
+        var sync = context.Player.Rogue3DManager.EnsureUnlockState();
         return Task.FromResult(CallGSResult.Ok("{}", sync));
     }
 }

@@ -1,9 +1,8 @@
 using MikuSB.Data;
-using MikuSB.Database.Player;
 using MikuSB.GameServer.Game.Player;
 using MikuSB.Proto;
 
-namespace MikuSB.GameServer.Server.CallGS.Handlers.Rogue3D;
+namespace MikuSB.GameServer.Game.Rogue3D;
 
 internal static class Rogue3DStateHelper
 {
@@ -118,11 +117,6 @@ internal static class Rogue3DStateHelper
         return ShuffledDailyBuffIds;
     }
 
-    private static IEnumerable<uint> GetDailyBuffIds()
-    {
-        return GetOrCreateDailyBuffIds();
-    }
-
     private static void Shuffle<T>(IList<T> list, Random random)
     {
         for (var i = list.Count - 1; i > 0; i--)
@@ -132,7 +126,7 @@ internal static class Rogue3DStateHelper
         }
     }
 
-    private static void EnsureMinAttr(PlayerInstance player, uint sid, uint value, NtfSyncPlayer sync, bool overwrite = false)
+    private static void EnsureMinAttr(PlayerInstance player, uint sid, uint value, NtfSyncPlayer sync)
     {
         var attr = player.Attributes.Get(GroupId, sid);
         if (attr == null)
@@ -143,7 +137,7 @@ internal static class Rogue3DStateHelper
             return;
         }
 
-        if ((!overwrite && attr.Val >= value) || (overwrite && attr.Val == value))
+        if (attr.Val >= value)
         {
             return;
         }
